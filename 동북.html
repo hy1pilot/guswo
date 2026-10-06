@@ -2,7 +2,6 @@
 <html>
 <head>
     <style>
-    /* 배경색을 어둡게 설정하고 상자를 화면 중앙에 정렬합니다 */
     body { 
         background-color:#787878; 
         font-family:monospace; 
@@ -15,24 +14,21 @@
         box-sizing: border-box;
     }
 
-    /* 📌 기존의 모든 코드를 감싸 안을 모서리가 둥근 상자 */
     .rounded-container {
-        background-color: #222222;        /* 상자 내부 배경색 (콘텐츠 가독성을 위해 어둡게 지정) */
-        border: 3px solid #941E34;        /* 동북선 고유색상 테두리 */
-        border-radius: 20px;              /* 둥근 모서리 설정 */
-        padding: 2em;                     /* 내부 여백 */
+        background-color: #222222;
+        border: 3px solid #941E34;
+        border-radius: 20px;
+        padding: 2em;
         width: 100%;
-        max-width: 600px;                 /* 상자의 최대 가로 너비 */
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3); /* 부드러운 입체감 그림자 */
+        max-width: 600px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         box-sizing: border-box;
     }
 
-    /* 상자 내부 폰트 색상 및 요소 정렬 */
     #log p { margin:0; white-space:pre-wrap; color:#941E34; }
     #line { display:flex; margin-top: 1em; }
     #line span { margin-right:0.5em; }
-    
-    /* 입력창 디자인 변경 */
+
     input { 
         background:transparent; 
         border:double #941E34; 
@@ -42,10 +38,9 @@
         flex:1; 
         outline:none; 
         padding: 5px 10px;
-        border-radius: 6px; /* 입력창 모서리도 부드럽게 매칭 */
+        border-radius: 6px;
     }
 
-    /* 로고 이미지 정렬 */
     .logo-img {
         display: block;
         max-width: 120px;
@@ -55,23 +50,17 @@
 </head>
 <body>
 
-<!-- 1. 기존의 모든 요소를 감싸는 둥근 상자 시작 -->
 <div class="rounded-container">
 
-    <!-- 로고 이미지 (srg -> src 오타 수정 및 가로 크기 최적화) -->
     <img class="logo-img" src="https://i.postimg.cc/W12dy0Tf/2BR6w-9Yl6GAQ9b-Eo6eg1A9kl-TPc-A-AKOQ9eor9UYrad-FJ3Kr-LXTe9V2c-Wa-C418X7L8K5rf-Z-r7DOGBZe-Lr-Ry-C4t.png" alt="동북선">
-    
-    <!-- 로그 기록 영역 -->
+
     <div id="log"></div>
-    
-    <!-- 커맨드 입력창 -->
+
     <div id="line"><input id="cmd" autofocus></div>
 
 </div>
-<!-- 둥근 상자 끝 -->
 
 <script>
-/* 기존 자바스크립트 로직 원본 유지 */
 const log = document.getElementById('log');
 const cmd = document.getElementById('cmd');
 
@@ -80,7 +69,6 @@ function addMessage(message) {
     log.appendChild(p);
     setLastMessageTest(message);
     cmd.value = '';
-    // 스크롤이 부모 둥근 박스가 아닌 전체 화면 기준으로 작동하게 유지
     window.scrollTo(0, document.body.scrollHeight);
 }
 
