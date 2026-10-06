@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+    body { 
+        background-color:#787878; 
+        font-family:monospace; 
+        padding:2em;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    .rounded-container {
+        background-color: #222222;
+        border: 3px solid #6789CA;
+        border-radius: 20px;
+        padding: 2em;
+        width: 100%;
+        max-width: 600px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        box-sizing: border-box;
+    }
+
+    #log p { margin:0; white-space:pre-wrap; color:#6789CA; }
+    #line { display:flex; margin-top: 1em; }
+    #line span { margin-right:0.5em; }
+    
+    input { 
+        background:transparent; 
+        border:double #6789CA; 
+        color:#6789CA; 
+        font-family:monospace; 
+        font-size:1em; 
+        flex:1; 
+        outline:none; 
+        padding: 5px 10px;
+        border-radius: 6px;
+    }
+
+    /* 로고 이미지 정렬 */
+    .logo-img {
+        display: block;
+        max-width: 120px;
+        margin: 0 auto 1.5em auto;
+    }
+    </style>
+</head>
+<body>
+
+<div class="rounded-container">
+
+    <img class="logo-img" src="https://i.postimg.cc/gkG8y5SB/e-T2TVB6G3j-Qu1YU96Ng2x-S1Um3ZH-b-U-D-e-N3-Kd-H132QX14kop-Tw8E26jyt0Xk-Qz-FGObg9DPdms615LGc-RXQc-pp.png" alt="신림선">
+    
+    <div id="log"></div>
+    
+    <div id="line"><input id="cmd" autofocus></div>
+
+</div>
+
+<script>
+const log = document.getElementById('log');
+const cmd = document.getElementById('cmd');
+
+function addMessage(message) {
+    const p = document.createElement('p');
+    log.appendChild(p);
+    setLastMessageTest(message);
+    cmd.value = '';
+    window.scrollTo(0, document.body.scrollHeight);
+}
+
+function setLastMessageTest(text) {
+  const pTags = log.querySelectorAll('p');
+  if(pTags.length > 0) {
+      pTags[pTags.length - 1].textContent = text;
+  }
+}
+
+cmd.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    addMessage(cmd.value);
+  }
+});
+
+function readKeyboardEvent(event) {
+  const keyValue = event.key;
+  const keyPhysicalCode = event.code;  
+  console.log(`Key pressed: ${keyValue} (Code: ${keyPhysicalCode})`);
+  if (keyValue === 'Enter') {
+    console.log('The Enter key was pressed!');
+  }
+}
+document.addEventListener('keydown', readKeyboardEvent);
+</script>
+</body>
+</html>

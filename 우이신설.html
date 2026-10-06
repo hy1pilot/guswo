@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+    body { 
+        background-color:#787878; 
+        font-family:monospace; 
+        padding:2em;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    .rounded-container {
+        background-color: #222222;
+        border: 3px solid #B7C450;
+        border-radius: 20px;
+        padding: 2em;
+        width: 100%;
+        max-width: 600px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        box-sizing: border-box;
+    }
+
+    #log p { margin:0; white-space:pre-wrap; color:#B7C450; }
+    #line { display:flex; margin-top: 1em; }
+    #line span { margin-right:0.5em; }
+    
+    input { 
+        background:transparent; 
+        border:double #B7C450; 
+        color:#B7C450; 
+        font-family:monospace; 
+        font-size:1em; 
+        flex:1; 
+        outline:none; 
+        padding: 5px 10px;
+        border-radius: 6px;
+    }
+
+    /* 로고 이미지 정렬 */
+    .logo-img {
+        display: block;
+        max-width: 120px;
+        margin: 0 auto 1.5em auto;
+    }
+    </style>
+</head>
+<body>
+
+<div class="rounded-container">
+
+    <img class="logo-img" src="https://i.postimg.cc/PxBKr4dX/v-W4xd-Rj92Sz-G2II-ct-URj-V3Fw-G3fv-Bylg80t-Uajswu1ap-DHqs-MA4Swih-Mp-P7bv-Of-SG0UUBr-YCw54z-NM56SZZ.png" alt="우이신설선">
+    
+    <div id="log"></div>
+    
+    <div id="line"><input id="cmd" autofocus></div>
+
+</div>
+
+<script>
+const log = document.getElementById('log');
+const cmd = document.getElementById('cmd');
+
+function addMessage(message) {
+    const p = document.createElement('p');
+    log.appendChild(p);
+    setLastMessageTest(message);
+    cmd.value = '';
+    window.scrollTo(0, document.body.scrollHeight);
+}
+
+function setLastMessageTest(text) {
+  const pTags = log.querySelectorAll('p');
+  if(pTags.length > 0) {
+      pTags[pTags.length - 1].textContent = text;
+  }
+}
+
+cmd.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    addMessage(cmd.value);
+  }
+});
+
+function readKeyboardEvent(event) {
+  const keyValue = event.key;
+  const keyPhysicalCode = event.code;  
+  console.log(`Key pressed: ${keyValue} (Code: ${keyPhysicalCode})`);
+  if (keyValue === 'Enter') {
+    console.log('The Enter key was pressed!');
+  }
+}
+document.addEventListener('keydown', readKeyboardEvent);
+</script>
+</body>
+</html>
