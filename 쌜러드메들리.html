@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <title>
+            glangtoriaminariastariakerianoriefiranggeria
+        </title>
+        <style>
+            body{
+                font-family: monospace;
+                padding: 20px;
+                text-align: center;
+            }
+            .input-box{
+                margin-bottom: 20px;
+            }
+            input{
+                font-family: monospace;
+                width: 400px;
+                padding: 10px;
+                font-size: 16px;
+            }
+            button{
+                font-family: monospace;
+                padding: 10px 20px;
+                font-size: 16px;
+                cursor: pointer;
+            }
+            .vidio-container{
+                margin-top: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>playaaaaaaaaaaaar</h2>
+        <div class="input-box">
+            <input type="text" id="youtubeUrl" placeholder="유튭 링크 넣어~~~~~~~~">
+            <button onclick="playYoutube()">졔생흐ㅏ기</button>
+        </div>
+        <div class="vidio-container" id="playerArea"></div>
+        <script>
+            function playYoutube(){
+                const urlInput = document.getElementById("youtubeUrl").value;
+                const playerArea = document.getElementById("playerArea");
+                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                const match = urlInput.match(regExp);
+                if (match && match[2].length === 11){
+                    const vidioId = match[2];
+                    playerArea.innerHTML = `
+                        <iframe
+                            width="640"
+                            height="360"
+                            src="https://www.youtube.com/watch?v=${vidioId}"
+                            title="youtube vidio playeor"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowfullscreen>
+                        </iframe>
+                    `;
+                }
+                else{
+                    alert("잘못 넣음");
+                }
+            }
+        </script>
+    </body>
+</html>

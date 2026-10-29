@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    //a<br><br>
+</head>
+<body>
+    <script>
+        function test(){
+            let i = 1
+            let j = 1
+            let k = i + j
+            console.log(i, j, k)
+        }
+    </script>
+    <span id = "ragromerianestorianopania" onclick = "test()">
+        maaaaa
+    </span>
+    <script>
+        var spasebeotn = document.getElementById("ragromerianestorianopania");
+        spasebeotn.addEventListener("mouseenter", () => {
+            spasebeotn.style.backgroundColor = "#000000"
+            spasebeotn.style.color = "#ffffff"
+            spasebeotn.style.boxShadow = "0 10px 20px rgba(0, 0, 0, 0.5)"
+            spasebeotn.style.border = "10px outset #aaaaaa"
+        });
+        spasebeotn.addEventListener("mouseleave", () => {
+            spasebeotn.style.backgroundColor = ""
+            spasebeotn.style.color = ""
+            spasebeotn.style.boxShadow = "0 10px 20px rgba(0, 0, 0, 1)"
+            spasebeotn.style.border = "10px inset #000000"
+        });
+    </script>
+</body>
+</html>
