@@ -44,16 +44,18 @@
                 const playerArea = document.getElementById("playerArea");
                 const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
                 const match = urlInput.match(regExp);
+                console.log(urlInput);
+                console.log(match);
                 if (match && match[2].length === 11){
                     const vidioId = match[2];
                     playerArea.innerHTML = `
                         <iframe
                             width="640"
                             height="360"
-                            src="https://www.youtube.com/watch?v=${vidioId}"
+                            src="https://github.com/"
                             title="youtube vidio playeor"
                             frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            
                             allowfullscreen>
                         </iframe>
                     `;
@@ -62,6 +64,9 @@
                     alert("잘못 넣음");
                 }
             }
+            // allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        // src="https://www.youtube.com/watch?v=${vidioId}"
         </script>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/JbobOp1WY3g?si=bkEgpZpRMFo9fu-q" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
     </body>
 </html>

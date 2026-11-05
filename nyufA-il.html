@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<table border="1000" cellspacing="1000" cellpadding="1000">
+    <tr>
+        <td>
+            1
+        </td>
+        <td>
+            2text
+        </td>
+        <td>
+            4
+        </td>
+    </tr>
+    <tr>
+        <td>
+            8
+        </td>
+        <td id="ragromerianestorianopania">
+            16
+        </td>
+        <td>
+            32
+        </td>
+    </tr>
+</table>
+<script>
+        var spasebeotn = document.getElementById("ragromerianestorianopania");
+        spasebeotn.addEventListener("mouseenter", () => {
+            spasebeotn.style.backgroundColor = "#000000"
+            spasebeotn.style.color = "#ffffff"
+            spasebeotn.style.boxShadow = "0 10px 20px rgba(0, 0, 0, 0.5)"
+            spasebeotn.style.border = "10px outset #aaaaaa"
+        });
+        spasebeotn.addEventListener("mouseleave", () => {
+            spasebeotn.style.backgroundColor = ""
+            spasebeotn.style.color = ""
+            spasebeotn.style.boxShadow = "0 10px 20px rgba(0, 0, 0, 1)"
+            spasebeotn.style.border = "10px inset #000000"
+        });
+    </script>
