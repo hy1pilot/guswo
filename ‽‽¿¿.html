@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UTF-8 3진법 암호 번역기 (？ 구분)</title>
+<style>
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+margin: 0;
+padding: 16px;
+font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+background: #0f172a;
+color: #f8fafc;
+}
+.box {
+max-width: 500px;
+margin: 0 auto;
+background: #1e293b;
+border-radius: 16px;
+padding: 18px;
+border: 1px solid #334155;
+}
+h2 {
+margin: 0 0 6px;
+font-size: 1.25rem;
+color: #38bdf8;
+}
+.sub {
+font-size: 0.82rem;
+color: #94a3b8;
+margin-bottom: 16px;
+line-height: 1.4;
+}
+label {
+display: block;
+font-size: 0.9rem;
+font-weight: 700;
+margin-bottom: 6px;
+color: #e2e8f0;
+}
+input[type="text"], textarea {
+width: 100%;
+background: #0f172a;
+color: #fff;
+border: 1px solid #475569;
+border-radius: 12px;
+padding: 12px;
+font-size: 16px;
+line-height: 1.45;
+font-family: inherit;
+}
+input[type="text"] {
+margin-bottom: 14px;
+}
+textarea {
+height: 120px;
+resize: none;
+}
+input[type="text"]:focus, textarea:focus {
+outline: none;
+border-color: #38bdf8;
+}
+.grid-btn {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+margin: 14px 0;
+}
+button {
+padding: 13px 10px;
+border: none;
+border-radius: 10px;
+font-size: 0.95rem;
+font-weight: 700;
+cursor: pointer;
+}
+.btn-primary { background: #38bdf8; color: #0f172a; }
+.btn-primary:active { background: #0284c7; color: #fff; }
+.btn-sub { background: #334155; color: #f8fafc; }
+.btn-sub:active { background: #475569; }
+.msg {
+margin-top: 10px;
+font-size: 0.85rem;
+color: #fbbf24;
+text-align: center;
+min-height: 1.2em;
+}
+</style>
+</head>
+<body>
+<div class="box">
+<h2>UTF-8 3진법 암호 번역기 (? ¿ ‽)</h2>
+<div class="sub">? = 0, ¿ = 1, ‽ = 2 | 글자 구분자: <strong>？</strong> (전각 물음표)</div>
+
+<label for="secretKey">비밀번호 (숫자 4자리, 선택)</label>
+<input type="text" id="secretKey" inputmode="numeric" maxlength="4" placeholder="비워두면 기본 규칙 작동 (예: 1234)">
+
+<label for="plainText">원문 입력</label>
+<textarea id="plainText" placeholder="한글, 영문, 한자, 이모지 모두 입력 가능">櫻花蝦炒高麗菜</textarea>
+
+<div class="grid-btn">
+<button type="button" class="btn-primary" id="btnEncode">▼ 암호로 변환</button>
+<button type="button" class="btn-primary" id="btnDecode">▲ 원문으로 해독</button>
+<button type="button" class="btn-sub" id="btnCopy">암호문 복사</button>
+<button type="button" class="btn-sub" id="btnClear">전체 지우기</button>
+</div>
+
+<label for="cipherText">3진법 암호문</label>
+<textarea id="cipherText" placeholder="암호문이 여기에 표시됩니다"></textarea>
+
+<div class="msg" id="msgBox"></div>
+</div>
+
+<script>
+(function() {
+var SYMBOLS = ['?', '¿', '‽'];
+var DELIMITER = '？';
+var encoder = new TextEncoder();
+var decoder = new TextDecoder();
+
+function showMsg(text) {
+var box = document.getElementById('msgBox');
+if (!box) return;
+box.textContent = text;
+setTimeout(function() {
+if (box.textContent === text) box.textContent = '';
+}, 2500);
+}
+
+function getKeyShift(password, byteIndex) {
+if (!password) return 0;
+var keyBytes = encoder.encode(password);
+var hash = 2166136261;
+for (var i = 0; i < keyBytes.length; i++) {
+hash ^= keyBytes[i];
+hash = Math.imul(hash, 16777619);
+}
+var mixed = (hash ^ (byteIndex * 2654435761)) >>> 0;
+mixed = Math.imul(mixed ^ (mixed >>> 16), 2246822507) >>> 0;
+return mixed % 256;
+}
+
+function encodeText() {
+var text = document.getElementById('plainText').value;
+var password = document.getElementById('secretKey').value;
+if (!text) {
+showMsg('변환할 원문을 입력해 주세요.');
+return;
+}
+
+var chars = Array.from(text);
+var globalByteIdx = 0;
+var encodedChars = [];
+
+for (var c = 0; c < chars.length; c++) {
+var bytes = encoder.encode(chars[c]);
+var charCipher = '';
+for (var i = 0; i < bytes.length; i++) {
+var shift = getKeyShift(password, globalByteIdx++);
+var shiftedByte = (bytes[i] + shift) % 256;
+var base3 = shiftedByte.toString(3).padStart(6, '0');
+for (var d = 0; d < base3.length; d++) {
+charCipher += SYMBOLS[parseInt(base3.charAt(d), 10)];
+}
+}
+encodedChars.push(charCipher);
+}
+
+document.getElementById('cipherText').value = encodedChars.join(DELIMITER);
+if (password) {
+showMsg('비밀번호(' + password + ')로 암호화했습니다.');
+} else {
+showMsg('기본 규칙으로 암호화했습니다.');
+}
+}
+
+function decodeText() {
+var cipher = document.getElementById('cipherText').value.replace(/\s+/g, '');
+var password = document.getElementById('secretKey').value;
+if (!cipher) {
+showMsg('해독할 암호문을 입력해 주세요.');
+return;
+}
+
+try {
+var charBlocks = cipher.split(DELIMITER);
+var globalByteIdx = 0;
+var resultChars = [];
+
+for (var k = 0; k < charBlocks.length; k++) {
+var block = charBlocks[k];
+if (block.length === 0 || block.length % 6 !== 0) {
+throw new Error('길이 오류');
+}
+var byteCount = block.length / 6;
+var bytes = new Uint8Array(byteCount);
+
+for (var b = 0; b < byteCount; b++) {
+var chunk = block.slice(b * 6, (b + 1) * 6);
+var base3Str = '';
+for (var s = 0; s < chunk.length; s++) {
+var idx = SYMBOLS.indexOf(chunk.charAt(s));
+if (idx === -1) throw new Error('기호 오류');
+base3Str += idx.toString();
+}
+var shiftedByte = parseInt(base3Str, 3);
+var shift = getKeyShift(password, globalByteIdx++);
+bytes[b] = (shiftedByte - shift + 256) % 256;
+}
+resultChars.push(decoder.decode(bytes));
+}
+
+document.getElementById('plainText').value = resultChars.join('');
+showMsg('원문으로 해독했습니다.');
+} catch (e) {
+showMsg('해독 실패: 암호문 형식을 확인해 주세요.');
+}
+}
+
+function copyCipher() {
+var cipherArea = document.getElementById('cipherText');
+var text = cipherArea.value;
+if (!text) {
+showMsg('복사할 암호문이 없습니다.');
+return;
+}
+
+if (navigator.clipboard && navigator.clipboard.writeText) {
+navigator.clipboard.writeText(text).then(function() {
+showMsg('암호문을 복사했어요.');
+}).catch(function() {
+fallbackCopy(cipherArea);
+});
+} else {
+fallbackCopy(cipherArea);
+}
+}
+
+function fallbackCopy(area) {
+area.focus();
+area.select();
+area.setSelectionRange(0, 99999);
+var ok = false;
+try {
+ok = document.execCommand('copy');
+} catch (e) {}
+if (window.getSelection) {
+window.getSelection().removeAllRanges();
+}
+showMsg(ok ? '암호문을 복사했어요.' : '복사 실패: 길게 눌러 복사해 주세요.');
+}
+
+function clearAll() {
+document.getElementById('plainText').value = '';
+document.getElementById('cipherText').value = '';
+showMsg('모두 지웠습니다.');
+}
+
+document.getElementById('btnEncode').addEventListener('click', encodeText);
+document.getElementById('btnDecode').addEventListener('click', decodeText);
+document.getElementById('btnCopy').addEventListener('click', copyCipher);
+document.getElementById('btnClear').addEventListener('click', clearAll);
+
+showMsg('번역기 준비 완료');
+})();
+</script>
+</body>
+</html>
