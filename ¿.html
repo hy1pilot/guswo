@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>?의 암호 종합체 v2.0</title>
+<style>
+• { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+margin: 0;
+padding: 16px;
+font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+background: #0f172a;
+color: #f8fafc;
+display: flex;
+justify-content: center;
+align-items: flex-start;
+min-height: 100vh;
+}
+.box {
+width: 100%;
+max-width: 500px;
+margin: 0 auto;
+background: #1e293b;
+border-radius: 16px;
+padding: 18px;
+border: 1px solid #334155;
+box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+h2 {
+margin: 0 0 6px;
+font-size: 1.25rem;
+color: #38bdf8;
+text-align: center;
+}
+.sub {
+font-size: 0.82rem;
+color: #94a3b8;
+margin-bottom: 16px;
+line-height: 1.4;
+text-align: center;
+}
+label {
+display: block;
+font-size: 0.9rem;
+font-weight: 700;
+margin-bottom: 6px;
+color: #e2e8f0;
+}
+input[type="text"], textarea {
+width: 100%;
+box-sizing: border-box;
+background: #0f172a;
+color: #fff;
+border: 1px solid #475569;
+border-radius: 12px;
+padding: 12px;
+font-size: 16px;
+line-height: 1.45;
+font-family: inherit;
+}
+input[type="text"] {
+margin-bottom: 14px;
+}
+textarea {
+height: 120px;
+resize: none;
+}
+input[type="text"]:focus, textarea:focus { outline: none; border-color: #38bdf8; }
+.grid-btn {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+margin: 14px 0;
+}
+button {
+padding: 13px 10px;
+border: none;
+border-radius: 10px;
+font-size: 0.95rem;
+font-weight: 700;
+cursor: pointer;
+transition: background 0.15s, color 0.15s;
+}
+.btn-primary { background: #38bdf8; color: #0f172a; }
+.btn-primary:active { background: #0284c7; color: #fff; }
+.btn-audio { background: #a855f7; color: #fff; grid-column: span 2; margin-bottom: 4px; }
+.btn-audio.playing { background: #dc2626; }
+/* 🎙️ 마이크 인식 전용 신상 버튼 스타일 */
+.btn-listen { background: #10b981; color: #fff; grid-column: span 2; }
+.btn-listen.listening { background: #ef4444; animation: pulse 1.5s infinite; }
+.btn-sub { background: #334155; color: #f8fafc; }
+.btn-sub:active { background: #475569; }
+.msg {
+margin-top: 10px;
+font-size: 0.85rem;
+color: #fbbf24;
+text-align: center;
+min-height: 1.2em;
+}
+@keyframes pulse {
+0% { opacity: 1; }
+50% { opacity: 0.7; }
+100% { opacity: 1; }
+}
+</style>
+</head>
+<body>
+<div class="box">
+<h2>UTF-8 3진법 암호 번역기 & 오디오 종합체 (? ¿ ‽)</h2>
+<div class="sub">? = 0, ¿ = 1, ‽ = 2 | 글자 구분자: <strong>？</strong> (전각 물음표)</div>
+
+<label for="secretKey">비밀번호 (자유 형식, 선택)</label>
+<input type="text" id="secretKey" inputmode="text" placeholder="비워두면 기본 규칙 작동 (한글, 영문, 숫자 가능)">
+
+<label for="plainText">원문 입력</label>
+<textarea id="plainText" placeholder="한글, 영문, 한자, 이모지 모두 입력 가능"></textarea>
+
+<div class="grid-btn">
+<button type="button" class="btn-primary" id="btnEncode">▼ 암호로 변환</button>
+<button type="button" class="btn-primary" id="btnDecode">▲ 원문으로 해독</button>
+<button type="button" class="btn-sub" id="btnCopy">암호문 복사</button>
+<button type="button" class="btn-sub" id="btnClear">전체 지우기</button>
+<button type="button" class="btn-audio" id="btnPlaySound">🎵 ▶ 음 재생하기 (구형파)</button>
+<button type="button" class="btn-listen" id="btnListenSound">🎙️ ▷ 마이크 음 인식 시작</button>
+</div>
+
+<label for="cipherText">3진법 암호문</label>
+<textarea id="cipherText" placeholder="암호문이 여기에 표시되거나 마이크로 인식된 기호가 자동 타이핑됩니다"></textarea>
+
+<div class="msg" id="msgBox"></div>
+</div>
+
+<script>
+(function() {
+var SYMBOLS = ['?', '¿', '‽'];
+var DELIMITER = '？';
+var encoder = new TextEncoder();
+var decoder = new TextDecoder();
+
+var audioCtx = null;
+var activeNodes = [];
+ var activeTimeouts = [];
+ var isPlaying = false;
+
+// 🎙️ 마이크 음 인식 제어용 전역 변수들
+var micStream = null;
+var micAudioCtx = null;
+var micAnalyser = null;
+var isListening = false;
+var lastDetectedSymbol = "";
+var silenceCounter = 0;
+var hasContentInBlock = false;
+
+function showMsg(text) {
+var box = document.getElementById('msgBox');
+if (!box) return;
+box.textContent = text;
+setTimeout(function() {
+if (box.textContent === text) box.textContent = '';
+}, 2500);
+}
+
+function getKeyShift(password, byteIndex) {
+if (!password) return 0;
+var keyBytes = encoder.encode(password);
+var hash = 2166136261;
+for (var i = 0; i < keyBytes.length; i++) {
+hash ^= keyBytes[i];
+hash = Math.imul(hash, 16777619);
+}
+var mixed = (hash ^ (byteIndex * 2654435761)) >>> 0;
+mixed = Math.imul(mixed ^ (mixed >>> 16), 2246822507) >>> 0;
+return mixed % 256;
+}
+
+function encodeText() {
+var text = document.getElementById('plainText').value;
+var password = document.getElementById('secretKey').value;
+if (!text) {
+showMsg('변환할 원문을 입력해 주세요.');
+return;
+}
+
+var chars = Array.from(text);
+var globalByteIdx = 0;
+var encodedChars = [];
+
+for (var c = 0; c < chars.length; c++) {
+var bytes = encoder.encode(chars[c]);
+var charCipher = '';
+for (var i = 0; i < bytes.length; i++) {
+var shift = getKeyShift(password, globalByteIdx++);
+var shiftedByte = (bytes[i] + shift) % 256;
+var base3 = shiftedByte.toString(3).padStart(6, '0');
+for (var d = 0; d < base3.length; d++) {
+charCipher += SYMBOLS[parseInt(base3.charAt(d), 10)];
+}
+}
+encodedChars.push(charCipher);
+}
+
+document.getElementById('cipherText').value = encodedChars.join(DELIMITER);
+if (password) {
+showMsg('비밀번호(' + password + ')로 암호화했습니다.');
+} else {
+showMsg('기본 규칙으로 암호화했습니다.');
+}
+}
+
+function decodeText() {
+var cipher = document.getElementById('cipherText').value.replace(/\s+/g, '');
+var password = document.getElementById('secretKey').value;
+if (!cipher) {
+showMsg('해독할 암호문을 입력해 주세요.');
+return;
+}
+
+try {
+var charBlocks = cipher.split(DELIMITER);
+var globalByteIdx = 0;
+var resultChars = [];
+
+for (var k = 0; k < charBlocks.length; k++) {
+var block = charBlocks[k];
+if (block.length === 0 || block.length % 6 !== 0) {
+throw new Error('길이 오류');
+}
+var byteCount = block.length / 6;
+var bytes = new Uint8Array(byteCount);
+
+for (var b = 0; b < byteCount; b++) {
+var chunk = block.slice(b * 6, (b + 1) * 6);
+var base3Str = '';
+for (var s = 0; s < chunk.length; s++) {
+var idx = SYMBOLS.indexOf(chunk.charAt(s));
+if (idx === -1) throw new Error('기호 오류');
+base3Str += idx.toString();
+}
+var shiftedByte = parseInt(base3Str, 3);
+var shift = getKeyShift(password, globalByteIdx++);
+bytes[b] = (shiftedByte - shift + 256) % 256;
+}
+resultChars.push(decoder.decode(bytes));
+}
+
+document.getElementById('plainText').value = resultChars.join('');
+showMsg('원문으로 해독했습니다.');
+} catch (e) {
+showMsg('해독 실패: 암호문 형식을 확인해 주세요.');
+}
+}
+
+function stopCipherSound() {
+activeNodes.forEach(function(node) {
+try { node.stop(); } catch(e) {}
+});
+activeNodes = [];
+
+activeTimeouts.forEach(function(t) { clearTimeout(t); });
+activeTimeouts = [];
+
+var cipherArea = document.getElementById('cipherText');
+cipherArea.setSelectionRange(0, 0);
+cipherArea.blur();
+
+isPlaying = false;
+var playBtn = document.getElementById('btnPlaySound');
+playBtn.textContent = '🎵 ▶ 음 재생하기 (구형파)';
+playBtn.classList.remove('playing');
+showMsg('연주를 중지했습니다.');
+}
+
+function playCipherSound() {
+if (isPlaying) {
+stopCipherSound();
+return;
+}
+
+var cipherArea = document.getElementById('cipherText');
+var cipher = cipherArea.value;
+if (!cipher) {
+showMsg('재생할 암호문이 없습니다.');
+return;
+}
+
+if (!audioCtx) {
+audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+isPlaying = true;
+var playBtn = document.getElementById('btnPlaySound');
+playBtn.textContent = '⏹ 연주 중지하기';
+playBtn.classList.add('playing');
+showMsg('🎵 암호 코드를 재생 중입니다...');
+
+var symbolsArray = Array.from(cipher);
+var currentTime = audioCtx.currentTime;
+var accumulatedDelayMs = 0;
+
+symbolsArray.forEach(function(sym, index) {
+if (sym === '?' || sym === '¿' || sym === '‽') {
+var freq = 0;
+if (sym === '?') freq = 600;
+else if (sym === '¿') freq = 440;
+else if (sym === '‽') freq = 800;
+
+var osc = audioCtx.createOscillator();
+var gainNode = audioCtx.createGain();
+
+osc.type = 'square';
+osc.frequency.setValueAtTime(freq, currentTime);
+
+gainNode.gain.setValueAtTime(0, currentTime);
+gainNode.gain.linearRampToValueAtTime(0.2, currentTime + 0.01);
+gainNode.gain.setValueAtTime(0.2, currentTime + 0.09);
+gainNode.gain.linearRampToValueAtTime(0, currentTime + 0.1);
+
+osc.connect(gainNode);
+gainNode.connect(audioCtx.destination);
+
+osc.start(currentTime);
+osc.stop(currentTime + 0.1);
+activeNodes.push(osc);
+
+(function(idx, delay) {
+var t = setTimeout(function() {
+if (!isPlaying) return;
+cipherArea.focus();
+cipherArea.setSelectionRange(idx, idx + 1);
+}, delay);
+activeTimeouts.push(t);
+})(index, accumulatedDelayMs);
+
+currentTime += 0.1;
+accumulatedDelayMs += 100;
+}
+else if (sym === DELIMITER) {
+(function(idx, delay) {
+var t = setTimeout(function() {
+if (!isPlaying) return;
+cipherArea.focus();
+cipherArea.setSelectionRange(idx, idx + 1);
+}, delay);
+activeTimeouts.push(t);
+})(index, accumulatedDelayMs);
+
+currentTime += 0.2;
+accumulatedDelayMs += 200;
+}
+});
+
+var endTimeout = setTimeout(function() {
+if (!isPlaying) return;
+cipherArea.setSelectionRange(0, 0);
+cipherArea.blur();
+isPlaying = false;
+playBtn.textContent = '🎵 ▶ 음 재생하기 (구형파)';
+playBtn.classList.remove('playing');
+showMsg('연주가 끝났습니다.');
+}, accumulatedDelayMs + 100);
+activeTimeouts.push(endTimeout);
+}
+
+// 🎙️ 마이크 소리를 실시간 고속 푸리에 변환(FFT)으로 분석하여 기호를 추출하는 핵심 엔진
+function processMicAudio() {
+if (!isListening) return;
+
+var bufferLength = micAnalyser.frequencyBinCount;
+var dataArray = new Uint8Array(bufferLength);
+micAnalyser.getByteFrequencyData(dataArray);
+
+// 현재 오디오 환경의 최대 데시벨 강도(크기)와 그 주파수 위치 찾기
+var maxVal = -1;
+var maxIdx = -1;
+for (var i = 0; i < bufferLength; i++) {
+if (dataArray[i] > maxVal) {
+maxVal = dataArray[i];
+maxIdx = i;
+}
+}
+
+// 브라우저 샘플링 레이트에 따른 인덱스별 실제 헤르츠(Hz) 주파수 계산
+var sampleRate = micAudioCtx.sampleRate;
+var currentHz = maxIdx * (sampleRate / 2) / bufferLength;
+
+var cipherArea = document.getElementById('cipherText');
+
+// 소리가 기준치(데시벨 값 75) 이상일 때만 유효한 암호 신호로 판정 (주변 소음 1차 컷트)
+if (maxVal > 75) {
+silenceCounter = 0; // 신호가 들어왔으므로 무음 카운터 리셋
+var detectedSym = "";
+
+// 주변 환경 및 마이크 감도 편차를 고려해 주파수 범위에 ±45Hz 안전 오차 마진 반영
+if (currentHz >= 555 && currentHz <= 645) {
+detectedSym = "?";
+} else if (currentHz >= 395 && currentHz <= 485) {
+detectedSym = "¿";
+} else if (currentHz >= 755 && currentHz <= 845) {
+detectedSym = "‽";
+}
+
+// 소리가 연속해서 날 때 중복 입력되는 현상을 막고, 새로운 신호가 찍힐 때만 툭 타이핑 처리
+if (detectedSym !== "" && detectedSym !== lastDetectedSymbol) {
+cipherArea.value += detectedSym;
+lastDetectedSymbol = detectedSym;
+hasContentInBlock = true; // 현재 글자 블록에 기호가 채워짐을 기록
+}
+} else {
+// 소리가 들리지 않는 무음 구간(쉼표 및 공백) 처리 흐름
+silenceCounter++;
+lastDetectedSymbol = ""; // 신호 끊김 기록
+
+// 연속 무음 카운트가 약 0.25초 이상 이어지고, 현재 블록에 채워진 기호가 있을 때 글자 구분자(？) 자동 생성
+if (silenceCounter > 15 && hasContentInBlock) {
+// 마지막 글자가 구분자가 아닐 때만 예쁘게 마감 전각 물음표 처리
+if (cipherArea.value.length > 0 && !cipherArea.value.endsWith(DELIMITER)) {
+cipherArea.value += DELIMITER;
+}
+hasContentInBlock = false; // 새 블록 준비를 위해 리셋
+silenceCounter = 0;
+}
+}
+
+// 1초에 약 60번씩 마이크 소리를 초고속으로 이어받아 추적 루프 구동
+if (isListening) {
+requestAnimationFrame(processMicAudio);
+}
+}
+
+// 🎙️ 마이크 인식 시작 및 정지를 안전하게 스위칭 제어하는 함수
+function toggleMicListen() {
+var listenBtn = document.getElementById('btnListenSound');
+
+if (isListening) {
+// 마이크 작동 멈춤 흐름
+isListening = false;
+if (micStream) {
+micStream.getTracks().forEach(function(track) { track.stop(); });
+}
+if (micAudioCtx) {
+micAudioCtx.close();
+micAudioCtx = null;
+}
+listenBtn.textContent = "🎙️ ▷ 마이크 음 인식 시작";
+listenBtn.classList.remove('listening');
+showMsg("마이크 인식을 종료했습니다.");
+} else {
+// 마이크 작동 켬 흐름
+if (isPlaying) stopCipherSound(); // 재생 스피커 기능과 충돌 방지 차단
+
+navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+.then(function(stream) {
+micStream = stream;
+micAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+micAnalyser = micAudioCtx.createAnalyser();
+
+// 고주파 저주파 분석 해상도 설정 (정밀 역산 튜닝 값)
+micAnalyser.fftSize = 2048;
+
+var source = micAudioCtx.createMediaStreamSource(stream);
+source.connect(micAnalyser);
+
+isListening = true;
+listenBtn.textContent = "🎙️ ⏹ 인식 중지하기 (듣는 중)";
+listenBtn.classList.add('listening');
+showMsg("🎙️ 주변 소리를 분석하여 암호를 수집합니다.");
+
+// 주파수 실시간 분석 루프 가동
+silenceCounter = 0;
+lastDetectedSymbol = "";
+hasContentInBlock = false;
+processMicAudio();
+})
+.catch(function(err) {
+alert("마이크 권한을 허용해 주셔야 음 인식 기능을 사용할 수 있습니다.");
+});
+}
+}
+
+function copyCipher() {
+var cipherArea = document.getElementById('cipherText');
+var text = cipherArea.value;
+if (!text) {
+showMsg('복사할 암호문이 없습니다.');
+return;
+}
+
+if (navigator.clipboard && navigator.clipboard.writeText) {
+navigator.clipboard.writeText(text).then(function() {
+showMsg('암호문을 복사했어요.');
+}).catch(function() {
+fallbackCopy(cipherArea);
+});
+} else {
+fallbackCopy(cipherArea);
+}
+}
+
+function fallbackCopy(area) {
+area.focus();
+area.select();
+area.setSelectionRange(0, 99999);
+var ok = false;
+try {
+ok = document.execCommand('copy');
+} catch (e) {}
+if (window.getSelection) {
+window.getSelection().removeAllRanges();
+}
+showMsg(ok ? '암호문을 복사했어요.' : '복사 실패: 길게 눌러 복사해 주세요.');
+}
+
+function clearAll() {
+if (isPlaying) stopCipherSound();
+if (isListening) toggleMicListen();
+document.getElementById('plainText').value = '';
+document.getElementById('cipherText').value = '';
+showMsg('모두 지웠습니다.');
+}
+
+document.getElementById('btnEncode').addEventListener('click', encodeText);
+document.getElementById('btnDecode').addEventListener('click', decodeText);
+document.getElementById('btnCopy').addEventListener('click', copyCipher);
+document.getElementById('btnClear').addEventListener('click', clearAll);
+document.getElementById('btnPlaySound').addEventListener('click', playCipherSound);
+document.getElementById('btnListenSound').addEventListener('click', toggleMicListen);
+
+showMsg('번역기 및 음 인식 종합체 준비 완료');
+})();
+</script>
+</body>
+</html>
